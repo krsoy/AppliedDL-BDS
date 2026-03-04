@@ -1,0 +1,112 @@
+# ---------------------------------------------------------
+# Python cache / bytecode
+# ---------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+*$py.class
+
+# ---------------------------------------------------------
+# Virtual environments
+# ---------------------------------------------------------
+env/
+venv/
+.venv/
+crew_env/
+outputs/
+.idea/
+*.xml
+
+# ---------------------------------------------------------
+# OS-specific files
+# ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------
+# Logs & outputs
+# ---------------------------------------------------------
+logs/
+*.log
+*.out
+*.err
+output_*.txt
+error_*.txt
+slurm-*.out
+slurm-*.err
+
+# CrewAI outputs
+final_output.json
+
+# ---------------------------------------------------------
+# Model caches (vLLM, HuggingFace)
+# ---------------------------------------------------------
+# Hugging Face cache
+huggingface/
+hf-cache/
+hf_cache/
+.huggingface/
+.hf_cache/
+.huggingface_cache/
+
+# Use HF_HOME to store model weights on HPC nodes
+$HF_HOME/
+
+# vLLM cache/config roots (HPC friendly)
+.vllm_cache/
+vllm_cache/
+vllm_cache_root/
+.vllm_config/
+vllm_config_root/
+
+# Model weights downloaded from HuggingFace
+models/
+model/
+*.safetensors
+*.bin
+*.pt
+
+# ---------------------------------------------------------
+# Vectorstores (FAISS, Chroma, etc.)
+# ---------------------------------------------------------
+vectorstore/
+*.faiss
+*.index
+*.hnsw
+*.npz
+
+# ---------------------------------------------------------
+# Application artifacts
+# ---------------------------------------------------------
+pdfs/
+*.pdf
+
+# Temporary or intermediate data
+tmp/
+temp/
+cache/
+data/
+
+# ---------------------------------------------------------
+# Jupyter notebooks
+# ---------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb
+
+# ---------------------------------------------------------
+# Development tooling
+# ---------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+
+# ---------------------------------------------------------
+# Build / packaging
+# ---------------------------------------------------------
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST

@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --job-name=green_patent_mas
+#SBATCH --output=/ceph/home/student.aau.dk/gy53xm/AppliedDL/logs/a2b_%A.out
+#SBATCH --error=/ceph/home/student.aau.dk/gy53xm/AppliedDL/logs/a2b_%A.err
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:2
+#SBATCH --mem=60G
+#SBATCH --time=04:00:00
+
+
+uv run --no-sync python ./assignment2/A2_HITL.py
