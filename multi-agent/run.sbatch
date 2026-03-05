@@ -80,7 +80,7 @@ wait_for_server 8001 "QLoRA Mistral (Judge)"
 # ── Step 5: Run MAS pipeline ──────────────────────────────────────────────────
 echo "[INFO] Starting Multi-Agent debate pipeline..."
 cd $AGENT_DIR
-uv run --no-sync python main.py
+uv run --no-sync python -u main.py
 
 echo "[INFO] MAS pipeline complete."
 

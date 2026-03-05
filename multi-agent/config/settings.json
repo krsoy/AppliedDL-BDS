@@ -2,14 +2,14 @@
   "title": "Green Patent Classification – Multi-Agent Debate (AAU)",
   "question": "Classify the following patent claim as green technology (Y02) or not, using a structured multi-agent debate.",
 
-  "advocate_model_url":  "http://localhost:8000/v1",
-  "advocate_model_name": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+  "advocate_model_url":  "http://localhost:8001/v1",
+  "advocate_model_name": "qlora-mistral-judge",
 
   "skeptic_model_url":   "http://localhost:8000/v1",
   "skeptic_model_name":  "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
 
-  "judge_model_url":     "http://localhost:8001/v1",
-  "judge_model_name":    "qlora-mistral-judge",
+  "judge_model_url":     "http://localhost:8000/v1",
+  "judge_model_name":    "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
 
   "data": {
     "parquet_path":              "../patents_50k_green.parquet",
