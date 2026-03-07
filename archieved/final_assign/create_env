@@ -1,0 +1,29 @@
+# 1. 安装 uv（如果还没有）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 创建项目目录并初始化
+mkdir patent-green && cd patent-green
+
+# 3. 创建 venv
+uv venv --python 3.11
+
+# 4. 激活 venv
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate   # Windows
+
+# 5. 安装所有依赖
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+uv pip install \
+    transformers \
+    peft \
+    accelerate \
+    bitsandbytes \
+    datasets \
+    sentence-transformers \
+    scikit-learn \
+    pandas \
+    numpy \
+    joblib \
+    pyarrow \
+    fastparquet

@@ -13,7 +13,7 @@ import json
 import os
 
 MAS_CSV    = "../mas_summary.csv"
-POOL_PATH  = "../pool_with_pseudo_labels.parquet"
+POOL_PATH  = "../archieved/pool_with_pseudo_labels.parquet"
 GOLD_OUT   = "../gold_labels_human.json"
 
 # ── Load data ─────────────────────────────────────────────────────────────────

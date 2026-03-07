@@ -3,7 +3,7 @@ main.py  –  Green Patent Classification via Multi-Agent Debate (CrewAI)
 ─────────────────────────────────────────────────────────────────────────
 Agent 1 (Advocate): Qwen 7B        @ port 8000  → argues FOR green
 Agent 2 (Skeptic):  Qwen 7B        @ port 8000  → argues AGAINST green
-Agent 3 (Judge):    QLoRA Mistral  @ port 8001  → yes/no verdict
+Agent 3 (Judge):    QLoRA Mistral  @ port 8001  → verdict + rationale
                     called directly via /v1/completions (bypasses CrewAI)
 """
 
@@ -46,6 +46,18 @@ class PatentVerdict(BaseModel):
         return v if v in valid else "unknown"
 
 
+# ── Y02 context (shared between training and inference) ───────────────────────
+Y02_CONTEXT = (
+    "Y02 green technology categories:\n"
+    "- Y02E: renewable energy (solar, wind, hydro, fuel cells, smart grid)\n"
+    "- Y02T: clean transport (electric vehicles, hydrogen, efficient engines)\n"
+    "- Y02B: energy efficiency in buildings (insulation, heat pumps, LED)\n"
+    "- Y02A: climate change adaptation (flood protection, drought resistance)\n"
+    "- Y02W: waste and recycling (circular economy, biofuels from waste)\n"
+    "- Y02P: low-carbon production (green chemistry, carbon capture)\n"
+)
+
+
 # ── Config ────────────────────────────────────────────────────────────────────
 def load_config():
     with open("config/settings.json", "r") as f:
@@ -66,54 +78,6 @@ def load_llms(settings):
         temperature=0.3,
     )
     return qwen_llm
-
-
-# ── Judge: direct /v1/completions call to QLoRA Mistral ──────────────────────
-def mistral_judge(claim_text, advocate_raw, skeptic_raw, settings):
-    """
-    Call QLoRA Mistral directly via /v1/completions using the exact
-    prompt format it was trained on. Returns (label, confidence).
-    """
-    # Summarise debate context for the judge
-    adv_summary = advocate_raw[:300] if advocate_raw else "No argument provided."
-    skp_summary = skeptic_raw[:300]  if skeptic_raw  else "No argument provided."
-
-    prompt = (
-        "You are a patent classifier. "
-        "Determine if the following patent claim relates to green technology (Y02 classification).\n\n"
-        f"Patent claim: {claim_text[:500]}\n\n"
-        f"Advocate argument summary: {adv_summary}\n\n"
-        f"Skeptic argument summary: {skp_summary}\n\n"
-        "Based on the above, is this a green technology patent? Answer with 'yes' or 'no'.\n"
-        "Answer:"
-    )
-
-    try:
-        resp = requests.post(
-            f"{settings['advocate_model_url']}/completions",
-            json={
-                "model":       settings["advocate_model_name"],
-                "prompt":      prompt,
-                "max_tokens":  5,
-                "temperature": 0.1,
-            },
-            timeout=60,
-        )
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["text"].strip().lower()
-        print(f"  [Judge] Mistral raw: '{text}'")
-
-        if "yes" in text:
-            return 1, 0.85
-        elif "no" in text:
-            return 0, 0.85
-        else:
-            # Ambiguous — fall back to advocate vs skeptic scores
-            return None, None
-
-    except Exception as e:
-        print(f"  [Judge] Mistral call failed: {e}")
-        return None, None
 
 
 # ── Select high-risk claims ───────────────────────────────────────────────────
@@ -161,7 +125,7 @@ def build_agents(prompts, qwen_llm):
     return advocate, skeptic
 
 
-# ── Build tasks (Advocate + Skeptic only) ────────────────────────────────────
+# ── Build tasks ───────────────────────────────────────────────────────────────
 def build_tasks(claim_text, advocate, skeptic, prompts):
     adv_cfg = prompts["advocate_agent"]
     skp_cfg = prompts["skeptic_agent"]
@@ -200,6 +164,85 @@ def build_tasks(claim_text, advocate, skeptic, prompts):
     return advocate_task, skeptic_task
 
 
+# ── Judge: QLoRA Mistral via /v1/completions ──────────────────────────────────
+def mistral_judge(claim_text, claim_idx, advocate_raw, skeptic_raw, settings):
+    """
+    Call QLoRA Mistral directly via /v1/completions.
+    Prompt matches training format exactly:
+      System + Y02 context + claim + advocate + skeptic → Verdict + Rationale
+    Returns (label, confidence, rationale, y02_category)
+    """
+    adv_summary = advocate_raw[:400] if advocate_raw else "No argument provided."
+    skp_summary = skeptic_raw[:400]  if skeptic_raw  else "No argument provided."
+
+    prompt = (
+        "You are a patent classification judge specializing in Y02 green technology.\n\n"
+        f"{Y02_CONTEXT}\n"
+        f"Patent claim:\n{claim_text[:500]}\n\n"
+        f"Advocate argues:\n{adv_summary}\n\n"
+        f"Skeptic argues:\n{skp_summary}\n\n"
+        "Based on the arguments above, provide your judgment.\n"
+        "Verdict:"
+    )
+
+    try:
+        resp = requests.post(
+            f"{settings['advocate_model_url']}/completions",
+            json={
+                "model":       settings["advocate_model_name"],
+                "prompt":      prompt,
+                "max_tokens":  200,
+                "temperature": 0.1,
+                "stop":        ["\n\n", "Patent claim:"],
+            },
+            timeout=60,
+        )
+        resp.raise_for_status()
+        text = resp.json()["choices"][0]["text"].strip()
+        print(f"  [Judge] Mistral raw: '{text[:100]}'")
+        return parse_mistral_output(text, claim_idx)
+
+    except Exception as e:
+        print(f"  [Judge] Mistral call failed: {e}")
+        return None, None, f"Mistral call failed: {str(e)[:100]}", "unknown"
+
+
+def parse_mistral_output(text, claim_idx):
+    """
+    Parse Mistral output:
+      yes
+      Rationale: This patent qualifies as Y02E because...
+    Returns (label, confidence, rationale, y02_category)
+    """
+    text_lower = text.lower()
+
+    # Extract verdict from first 30 chars
+    label = None
+    if text_lower.startswith("yes") or "yes" in text_lower[:30]:
+        label = 1
+    elif text_lower.startswith("no") or "no" in text_lower[:30]:
+        label = 0
+
+    if label is None:
+        print(f"  [Judge] claim_{claim_idx}: ambiguous verdict: '{text[:50]}'")
+        return None, None, text[:200], "unknown"
+
+    # Extract rationale
+    rationale = "No rationale provided."
+    if "rationale:" in text_lower:
+        rationale = text[text_lower.index("rationale:") + len("rationale:"):].strip()
+        rationale = rationale[:300]
+
+    # Extract Y02 category
+    y02_category = "none" if label == 0 else "unknown"
+    for cat in ["Y02E", "Y02T", "Y02B", "Y02A", "Y02W", "Y02P"]:
+        if cat in text:
+            y02_category = cat
+            break
+
+    return label, 0.85, rationale, y02_category
+
+
 # ── Run debate for one claim ──────────────────────────────────────────────────
 def debate_one_claim(claim_text, claim_idx, advocate, skeptic, prompts, settings):
     advocate_task, skeptic_task = build_tasks(claim_text, advocate, skeptic, prompts)
@@ -214,35 +257,33 @@ def debate_one_claim(claim_text, claim_idx, advocate, skeptic, prompts, settings
 
     advocate_raw = advocate_task.output.raw if advocate_task.output else ""
     skeptic_raw  = skeptic_task.output.raw  if skeptic_task.output  else ""
+    adv_score    = extract_score(advocate_raw)
+    skp_score    = extract_score(skeptic_raw)
 
-    adv_score = extract_score(advocate_raw)
-    skp_score = extract_score(skeptic_raw)
-
-    # ── Judge: QLoRA Mistral via /v1/completions ──────────────────────────────
-    final_label, confidence = mistral_judge(
-        claim_text, advocate_raw, skeptic_raw, settings
+    # Judge: QLoRA Mistral via /v1/completions
+    final_label, confidence, rationale, y02_category = mistral_judge(
+        claim_text, claim_idx, advocate_raw, skeptic_raw, settings
     )
 
-    # Fallback if Mistral returns ambiguous or fails
+    # Fallback if Mistral ambiguous or failed
     if final_label is None:
         print(f"  [WARN] claim_{claim_idx}: Mistral ambiguous, "
               f"falling back to advocate vs skeptic scores")
-        final_label = 1 if adv_score > skp_score else 0
-        confidence  = round((adv_score + (1 - skp_score)) / 2, 3)
+        final_label  = 1 if adv_score > skp_score else 0
+        confidence   = round((adv_score + (1 - skp_score)) / 2, 3)
+        rationale    = (f"Fallback: advocate={adv_score:.2f} vs "
+                        f"skeptic={skp_score:.2f}. Mistral output ambiguous.")
+        y02_category = "unknown"
 
     return PatentVerdict(
         patent_id      = f"claim_{claim_idx}",
         claim_text     = claim_text[:200],
         final_label    = final_label,
         confidence     = confidence,
-        y02_category   = "unknown",
+        y02_category   = y02_category,
         advocate_score = adv_score,
         skeptic_score  = skp_score,
-        rationale      = (
-            f"Mistral Judge verdict: {'GREEN' if final_label == 1 else 'NOT GREEN'}. "
-            f"Advocate confidence: {adv_score:.2f}, "
-            f"Skeptic confidence: {skp_score:.2f}."
-        )
+        rationale      = rationale,
     ).model_dump()
 
 
@@ -268,16 +309,18 @@ def main():
     print(f"[INFO] Judge (QLoRA):    {settings['advocate_model_name']} "
           f"@ {settings['advocate_model_url']}")
 
-    advocate, skeptic = build_agents(prompts, qwen_llm)
     high_risk_df = select_high_risk_claims(settings)
 
     results = []
     total   = len(high_risk_df)
 
     for i, (_, row) in enumerate(high_risk_df.iterrows()):
-        claim_text = str(row["text"])[:8000]
+        claim_text = str(row["text"])[:2000]
         print(f"\n[{i+1}/{total}] Debating claim {i}...")
         print(f"  Preview: {claim_text[:80]}...")
+
+        # Rebuild agents every claim to avoid context accumulation
+        advocate, skeptic = build_agents(prompts, qwen_llm)
 
         try:
             result = debate_one_claim(
@@ -295,6 +338,7 @@ def main():
             print(f"  → label={result['final_label']}  "
                   f"conf={result['confidence']}  "
                   f"y02={result['y02_category']}")
+            print(f"  → rationale: {result['rationale'][:100]}")
 
         except Exception as e:
             print(f"  [ERROR] claim_{i}: {e}")

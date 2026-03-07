@@ -3,16 +3,16 @@
 ** Green patent CrewAI multiagent with Qlora finetune llm
 
 
-## assignment1 : Assignment_1.ipynb
-## assignment2 :  Assignment_2.ipynb
-## assignment3 :  Assignment_3.ipynb
+## assignment1 : Assignment_1
+## assignment2 :  Assignment_2
+## assignment3 :  Assignment_3
 
 ## qlora pipeline 1: A2_qlora.py
 ## qlora pipeline 2: A2_qlora_v2.py
 ## qlora pipeline 3: A2_qlora_v3.py
 
 
-## hugging face : https://huggingface.co/spaces/soysouce/AppDL-BDS
+## hugging face : https://huggingface.co/soysouce/patentsbert-silver-gold-finetuned
 
 ## Github Portfolio: https://github.com/krsoy/AppliedDL-BDS
 

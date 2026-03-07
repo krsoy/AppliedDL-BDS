@@ -20,9 +20,9 @@
     "high_risk_threshold":       0.8
   },
 
-  "output": {
-    "results_path": "../mas_labels.json",
-    "summary_path": "../mas_summary.csv",
-    "stats_path":   "../mas_stats.json"
-  }
+    "output": {
+    "results_path": "../mas_a3_labels.json",
+    "summary_path": "../mas_a3_summary.csv",
+    "stats_path":   "../mas_a3_stats.json"
+}
 }

@@ -4,7 +4,7 @@
 #SBATCH --error=/ceph/home/student.aau.dk/gy53xm/AppliedDL/logs/mas_%A.err
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:4
-#SBATCH --mem=60G
+#SBATCH --mem=24G
 #SBATCH --time=04:00:00
 
 set -euo pipefail
