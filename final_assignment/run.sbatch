@@ -11,7 +11,7 @@ set -euo pipefail
 
 # ── Absolute paths ────────────────────────────────────────────────────────────
 PROJECT=/ceph/home/student.aau.dk/gy53xm/AppliedDL
-AGENT_DIR=$PROJECT/multi-agent
+AGENT_DIR=$PROJECT/final_assignment
 
 mkdir -p $PROJECT/logs
 

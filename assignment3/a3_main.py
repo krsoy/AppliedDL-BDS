@@ -59,9 +59,9 @@ Y02_CONTEXT = (
 
 # ── Config ────────────────────────────────────────────────────────────────────
 def load_config():
-    with open("../multi-agent/config/settings.json", "r") as f:
+    with open("../final_assignment/config/settings.json", "r") as f:
         settings = json.load(f)
-    with open("../multi-agent/config/prompts.json", "r") as f:
+    with open("../final_assignment/config/prompts.json", "r") as f:
         prompts = json.load(f)
     return settings, prompts
 
