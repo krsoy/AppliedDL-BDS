@@ -81,7 +81,7 @@ vectorstore/
 # Application artifacts
 # ---------------------------------------------------------
 pdfs/
-*.pdf
+
 
 # Temporary or intermediate data
 tmp/
