@@ -25,18 +25,18 @@ print(f"显存: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB"
 # ── 1. 加载已保存的结果 ──────────────────────────────────────
 print("=== 加载已保存文件 ===")
 
-df = pd.read_parquet("patents_50k_green.parquet")
+df = pd.read_parquet("../archieved/patents_50k_green.parquet")
 print(df["split"].value_counts())
 
-X_train_emb       = np.load("X_train_emb.npy")
-X_eval_emb        = np.load("X_eval_emb.npy")
-y_train           = np.load("y_train.npy")
-y_eval            = np.load("y_eval.npy")
-prob_train        = np.load("prob_train.npy")
-prob_eval         = np.load("prob_eval.npy")
-uncertainty_train = np.load("uncertainty_train.npy")
-uncertainty_eval  = np.load("uncertainty_eval.npy")
-clf               = joblib.load("logistic_regression_classifier.joblib")
+X_train_emb       = np.load("../archieved/X_train_emb.npy")
+X_eval_emb        = np.load("../archieved/X_eval_emb.npy")
+y_train           = np.load("../archieved/y_train.npy")
+y_eval            = np.load("../archieved/y_eval.npy")
+prob_train        = np.load("../archieved/prob_train.npy")
+prob_eval         = np.load("../archieved/prob_eval.npy")
+uncertainty_train = np.load("../archieved/uncertainty_train.npy")
+uncertainty_eval  = np.load("../archieved/uncertainty_eval.npy")
+clf               = joblib.load("../archieved/logistic_regression_classifier.joblib")
 
 print(f"X_train_emb: {X_train_emb.shape}, X_eval_emb: {X_eval_emb.shape}")
 
@@ -59,7 +59,7 @@ X_pool_emb = enc.encode(
     convert_to_numpy=True,
     normalize_embeddings=True
 )
-np.save("X_pool_emb.npy", X_pool_emb.astype(np.float32))
+np.save("../archieved/X_pool_emb.npy", X_pool_emb.astype(np.float32))
 print(f"X_pool_emb: {X_pool_emb.shape}")
 
 del enc
@@ -78,8 +78,8 @@ pool_df["pseudo_prob_lr"]  = prob_pool
 pool_df["pseudo_label_lr"] = pseudo_label_lr
 pool_df["uncertainty_lr"]  = uncertainty_pool
 
-np.save("prob_pool.npy", prob_pool.astype(np.float32))
-np.save("uncertainty_pool.npy", uncertainty_pool.astype(np.float32))
+np.save("../archieved/prob_pool.npy", prob_pool.astype(np.float32))
+np.save("../archieved/uncertainty_pool.npy", uncertainty_pool.astype(np.float32))
 
 print(f"LR pseudo green=1 比例: {pseudo_label_lr.mean():.3f}")
 print(f"高置信度样本(>0.9 or <0.1): {((prob_pool>0.9)|(prob_pool<0.1)).sum()}")
@@ -270,7 +270,7 @@ class NaNStopCallback(TrainerCallback):
 
 # ── 训练参数 ─────────────────────────────────────────────────
 training_args = TrainingArguments(
-    output_dir="qlora-generative",
+    output_dir="../archieved/qlora-generative",
     num_train_epochs=3,
     per_device_train_batch_size=16,
     gradient_accumulation_steps=4,
@@ -351,8 +351,8 @@ pool_df["pseudo_prob_qlora"]  = prob_pool_qlora
 pool_df["pseudo_label_qlora"] = pseudo_label_qlora
 pool_df["uncertainty_qlora"]  = uncertainty_pool_qlora
 
-np.save("prob_pool_qlora.npy", prob_pool_qlora)
-np.save("uncertainty_pool_qlora.npy", uncertainty_pool_qlora)
+np.save("../archieved/prob_pool_qlora.npy", prob_pool_qlora)
+np.save("../archieved/uncertainty_pool_qlora.npy", uncertainty_pool_qlora)
 
 print(f"QLoRA pseudo green=1 比例: {pseudo_label_qlora.mean():.3f}")
 print(f"高置信度样本(>0.9 or <0.1): {((prob_pool_qlora>0.9)|(prob_pool_qlora<0.1)).sum()}")
